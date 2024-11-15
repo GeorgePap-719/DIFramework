@@ -17,18 +17,6 @@ public class DI {
 
   private final List<String> packages = new ArrayList<>();
 
-  DI() {
-    for (Package p : Package.getPackages()) {
-      packages.add(p.getName());
-    }
-    scanForAnnotations();
-  }
-
-  DI(String packageName) {
-    packages.add(packageName);
-    scanForAnnotations();
-  }
-
   private void scanForAnnotations() {
     for (String p : packages) {
       final var annotatedClasses = findComponents(p);
@@ -77,6 +65,18 @@ public class DI {
     }
   }
 
+  DI() {
+    for (Package p : Package.getPackages()) {
+      packages.add(p.getName());
+    }
+    scanForAnnotations();
+  }
+
+  DI(String packageName) {
+    packages.add(packageName);
+    scanForAnnotations();
+  }
+
   // Constructs a singleton instance.
   public <T> T singletonOf(Class<T> clazz) {
     String target = clazz.getCanonicalName();
@@ -104,6 +104,9 @@ public class DI {
     try {
       return loadClass(clazz);
     } catch (Throwable e) {
+      if (e instanceof NoSuchElementException castedE) {
+        throw castedE;
+      }
       throw new RuntimeException(e);
     }
   }
