@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 // class Main {
@@ -71,14 +72,22 @@ public class DI {
   }
 
   // Constructs a list of objects implementing the given interface.
-  public <T> T listOf(Class<T> clazz) {
-    //TODO
-    throw new IllegalStateException();
+  public <T> List<T> listOf(Class<T> interfaceName) {
+    final var implementations = new ArrayList<T>();
+    for (Map.Entry<String, Class<?>> entry : components.entrySet()) {
+      if (!interfaceName.isAssignableFrom(entry.getValue())) {
+        continue;
+      }
+      Object impl = oneOf(entry.getValue());
+      //noinspection unchecked
+      implementations.add((T) impl);
+    }
+    return implementations;
   }
 
   private <T> T loadClass(Class<T> clazz) throws InvocationTargetException, InstantiationException, IllegalAccessException, ClassNotFoundException {
     if (components.get(clazz.getCanonicalName()) == null) {
-      throw new NoSuchElementException("Class: " + clazz.getCanonicalName() + "does not have the '@Component' annotation");
+      throw new NoSuchElementException("Class: " + clazz.getCanonicalName() + " does not have the '@Component' annotation");
     }
     final var constructor = Arrays.stream(clazz.getDeclaredConstructors())
         .findFirst()

@@ -1,5 +1,6 @@
 package diframework;
 
+@Component
 public class MyService {
   private final Dependency dependency;
 

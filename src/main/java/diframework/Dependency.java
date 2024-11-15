@@ -1,5 +1,6 @@
 package diframework;
 
+@Component
 public class Dependency {
 
   public String whatIAm() {

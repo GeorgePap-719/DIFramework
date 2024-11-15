@@ -19,17 +19,20 @@ public class Main {
     System.out.println(myService.getDependency().whatIAm());
 
     // Test package-level annotation
-
+    for (WaiterI waiterI : di.listOf(WaiterI.class)) {
+      System.out.println(waiterI.toString());
+    }
 
 
     // for (Package p : Package.getPackages()) {
     //   // System.out.println(p.getName());
     //   List<Class<?>> annotatedClasses = AnnotationScanner.findAnnotatedClasses(p.getName(), Component.class);
     //   for (Class<?> annotatedClass : annotatedClasses) {
-    //     System.out.println("annotatedClass:" + annotatedClass);
-    //     if (annotatedClass.isAssignableFrom(WaiterImpl.class)) {
-    //       System.out.println("YES");
-    //     }
+    //     // System.out.println("annotatedClass:" + annotatedClass);
+    //
+    //     // if (annotatedClass.getSuperclass()) {
+    //     //   System.out.println("YES");
+    //     // }
     //   }
     // }
 
