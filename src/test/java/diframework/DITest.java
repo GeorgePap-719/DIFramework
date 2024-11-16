@@ -45,7 +45,7 @@ class DITest {
   @Test
   void testListOf() {
     final var di = new DI();
-    final var providers = di.listOf(CarInsuranceProvider.class);
+    final var providers = di.listOf(CarInsuranceProviderTest.class);
     assertEquals(3, providers.size());
   }
 }
@@ -91,11 +91,11 @@ class OtherService {
   }
 }
 
-interface CarInsuranceProvider {
+interface CarInsuranceProviderTest {
 }
 
 @Component
-class Provider1 implements CarInsuranceProvider {
+class Provider1 implements CarInsuranceProviderTest {
   private Dependency dependency;
 
   Provider1(Dependency dependency) {
@@ -104,7 +104,7 @@ class Provider1 implements CarInsuranceProvider {
 }
 
 @Component
-class Provider2 implements CarInsuranceProvider {
+class Provider2 implements CarInsuranceProviderTest {
   private Dependency dependency;
 
   Provider2(Dependency dependency) {
@@ -113,7 +113,7 @@ class Provider2 implements CarInsuranceProvider {
 }
 
 @Component
-class Provider3 implements CarInsuranceProvider {
+class Provider3 implements CarInsuranceProviderTest {
   private Dependency dependency;
 
   Provider3(Dependency dependency) {
