@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,42 +30,43 @@ public class DI {
   }
 
   private List<Class<?>> findComponents(String packageName) {
+    // Convert package name to directory path.
+    final var packagePath = packageName.replace('.', '/');
+    final Enumeration<URL> resources;
     try {
-      final var components = new ArrayList<Class<?>>();
-      // Convert package name to directory path.
-      final var packagePath = packageName.replace('.', '/');
-      final var resources = Thread.currentThread().getContextClassLoader().getResources(packagePath);
-      // Scan each directory in the package path.
-      while (resources.hasMoreElements()) {
-        final var resource = resources.nextElement();
-        final var directory = new File(resource.getFile());
-        if (!directory.exists()) {
-          continue;
-        }
-        final var dirList = directory.list();
-        if (dirList == null) {
-          continue;
-        }
-        // Scan each file in the directory.
-        for (String fileName : dirList) {
-          if (!fileName.endsWith(".class")) {
-            continue;
-          }
-          // Remove ".class" to get the class name.
-          final var className = fileName.substring(0, fileName.length() - 6);
-          final var canonicalName = packageName + '.' + className;
-          // Try to load the class.
-          final var clazz = safeGetClass(canonicalName);
-          // Check if the class has the specified annotation.
-          if (clazz.isAnnotationPresent(Component.class)) {
-            components.add(clazz);
-          }
-        }
-      }
-      return components;
+      resources = Thread.currentThread().getContextClassLoader().getResources(packagePath);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+    final var components = new ArrayList<Class<?>>();
+    // Scan each directory in the package path.
+    while (resources.hasMoreElements()) {
+      final var resource = resources.nextElement();
+      final var directory = new File(resource.getFile());
+      if (!directory.exists()) {
+        continue;
+      }
+      final var dirList = directory.list();
+      if (dirList == null) {
+        continue;
+      }
+      // Scan each file in the directory.
+      for (String fileName : dirList) {
+        if (!fileName.endsWith(".class")) {
+          continue;
+        }
+        // Remove ".class" to get the class name.
+        final var className = fileName.substring(0, fileName.length() - 6);
+        final var canonicalName = packageName + '.' + className;
+        // Try to load the class.
+        final var clazz = safeGetClass(canonicalName);
+        // Check if the class has the specified annotation.
+        if (clazz.isAnnotationPresent(Component.class)) {
+          components.add(clazz);
+        }
+      }
+    }
+    return components;
   }
 
   DI() {
