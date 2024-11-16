@@ -1,6 +1,7 @@
 package diframework;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -52,7 +53,7 @@ public class DI {
           final var className = fileName.substring(0, fileName.length() - 6);
           final var canonicalName = packageName + '.' + className;
           // Try to load the class.
-          final var clazz = Class.forName(canonicalName);
+          final var clazz = safeGetClass(canonicalName);
           // Check if the class has the specified annotation.
           if (clazz.isAnnotationPresent(Component.class)) {
             components.add(clazz);
@@ -60,7 +61,7 @@ public class DI {
         }
       }
       return components;
-    } catch (Throwable e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -159,7 +160,7 @@ public class DI {
       throw new IllegalStateException(e);
     } catch (InstantiationException e) {
       final var clazz = constructor.getClass();
-      throw new IllegalStateException("Illegal target: " + clazz.getCanonicalName(), e);
+      throw new IllegalStateException("Illegal annotation target: " + clazz.getCanonicalName(), e);
     } catch (InvocationTargetException e) {
       throw new RuntimeException(e);
     }
