@@ -1,6 +1,7 @@
 package diframework;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -110,7 +111,7 @@ public class DI {
     }
   }
 
-  private <T> T loadClass(Class<T> clazz) throws InvocationTargetException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+  private <T> T loadClass(Class<T> clazz) {
     if (components.get(clazz.getCanonicalName()) == null) {
       throw new NoSuchElementException("Class: " + clazz.getCanonicalName() + " does not have the '@Component' annotation");
     }
@@ -119,18 +120,49 @@ public class DI {
         .orElseThrow(() -> new IllegalStateException("unexpected"));
     final var parameterTypes = constructor.getParameterTypes();
     if (parameterTypes.length == 0) {
-      //noinspection unchecked
-      return (T) constructor.newInstance();
+      return createNewInstance(constructor, null);
     }
     // Create Parameters to inject them into constructor.
     final var parameters = new Object[parameterTypes.length];
     for (int i = 0; i < parameterTypes.length; i++) {
       final var parameterType = parameterTypes[i];
-      final var retrievedClass = Class.forName(parameterType.getCanonicalName());
+      final var retrievedClass = safeGetClass(parameterType.getCanonicalName());
       parameters[i] = loadClass(retrievedClass);
     }
-    //noinspection unchecked
-    return (T) constructor.newInstance(parameters);
+    return createNewInstance(constructor, parameters);
+  }
+
+  private Class<?> safeGetClass(String canonicalName) {
+    try {
+      return Class.forName(canonicalName);
+    } catch (ClassNotFoundException e) {
+      // At this point, we should always find a class.
+      throw new IllegalStateException(e);
+    }
+  }
+
+  /**
+   * Creates a new instance using the specified constructor and the given parameters.
+   * The parameters can be 'null', which implies to use an empty-constructor.
+   *
+   * @throws RuntimeException which wraps an 'InvocationTargetException', in case the target constructor throws an exception.
+   */
+  @SuppressWarnings("unchecked")
+  private <T> T createNewInstance(Constructor<?> constructor, Object[] parameters) {
+    try {
+      if (parameters == null) {
+        return (T) constructor.newInstance();
+      } else {
+        return (T) constructor.newInstance(parameters);
+      }
+    } catch (IllegalAccessException e) {
+      throw new IllegalStateException(e);
+    } catch (InstantiationException e) {
+      final var clazz = constructor.getClass();
+      throw new IllegalStateException("Illegal target: " + clazz.getCanonicalName(), e);
+    } catch (InvocationTargetException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
