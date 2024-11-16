@@ -1,7 +1,6 @@
 package diframework;
 
 import java.io.File;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -134,43 +133,9 @@ public class DI {
     return (T) constructor.newInstance(parameters);
   }
 
-  private static class Node {
-    private final Constructor<?> constructor;
-    private final Object[] parameters;
-
-
-    public Node(Constructor<?> constructor, Object[] parameters) {
-      this.constructor = constructor;
-      this.parameters = parameters;
-    }
-
-    public Node(Constructor<?> constructor) {
-      this.constructor = constructor;
-      this.parameters = null;
-    }
-
-    public Constructor<?> getConstructor() {
-      return constructor;
-    }
-
-    public Object[] getParameters() {
-      return parameters;
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T newInstance() throws InvocationTargetException, InstantiationException, IllegalAccessException {
-      if (parameters == null) {
-        return (T) constructor.newInstance();
-      } else {
-        return (T) constructor.newInstance(parameters);
-      }
-    }
-  }
-
   /**
    * Class to store a single instance for a given object.
    */
   private record Instance(Object value) {
   }
 }
-
