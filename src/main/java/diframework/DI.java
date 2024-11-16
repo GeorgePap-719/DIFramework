@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -105,35 +106,37 @@ public class DI {
 
   // Constructs each time a new instance.
   public <T> T oneOf(Class<T> clazz) {
-    try {
-      return loadClass(clazz);
-    } catch (Throwable e) {
-      if (e instanceof NoSuchElementException castedE) {
-        throw castedE;
-      }
-      throw new RuntimeException(e);
-    }
+    return new ClassLoader().loadClass(clazz);
   }
 
-  private <T> T loadClass(Class<T> clazz) {
-    if (components.get(clazz.getCanonicalName()) == null) {
-      throw new NoSuchElementException("Class: " + clazz.getCanonicalName() + " does not have the '@Component' annotation");
+  private class ClassLoader {
+    private final HashSet<Class<?>> seen = new HashSet<>();
+
+    <T> T loadClass(Class<T> clazz) {
+      final var canonicalName = clazz.getCanonicalName();
+      if (components.get(canonicalName) == null) {
+        throw new NoSuchElementException("Class: " + canonicalName + " does not have the '@Component' annotation");
+      }
+      if (seen.contains(clazz)) {
+        throw new IllegalStateException("There is a cyclic dependency at: " + canonicalName);
+      }
+      seen.add(clazz);
+      final var constructor = Arrays.stream(clazz.getDeclaredConstructors())
+          .findFirst()
+          .orElseThrow(() -> new IllegalStateException("unexpected"));
+      final var parameterTypes = constructor.getParameterTypes();
+      if (parameterTypes.length == 0) {
+        return createNewInstance(constructor, null);
+      }
+      // Create Parameters to inject them into constructor.
+      final var parameters = new Object[parameterTypes.length];
+      for (int i = 0; i < parameterTypes.length; i++) {
+        final var parameterType = parameterTypes[i];
+        final var retrievedClass = safeGetClass(parameterType.getCanonicalName());
+        parameters[i] = loadClass(retrievedClass);
+      }
+      return createNewInstance(constructor, parameters);
     }
-    final var constructor = Arrays.stream(clazz.getDeclaredConstructors())
-        .findFirst()
-        .orElseThrow(() -> new IllegalStateException("unexpected"));
-    final var parameterTypes = constructor.getParameterTypes();
-    if (parameterTypes.length == 0) {
-      return createNewInstance(constructor, null);
-    }
-    // Create Parameters to inject them into constructor.
-    final var parameters = new Object[parameterTypes.length];
-    for (int i = 0; i < parameterTypes.length; i++) {
-      final var parameterType = parameterTypes[i];
-      final var retrievedClass = safeGetClass(parameterType.getCanonicalName());
-      parameters[i] = loadClass(retrievedClass);
-    }
-    return createNewInstance(constructor, parameters);
   }
 
   private Class<?> safeGetClass(String canonicalName) {

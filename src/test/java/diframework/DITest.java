@@ -45,8 +45,14 @@ class DITest {
   @Test
   void testListOf() {
     final var di = new DI();
-    final var providers = di.listOf(CarInsuranceProvider.class);
+    final var providers = di.listOf(CarInsuranceProviderTest.class);
     assertEquals(3, providers.size());
+  }
+
+  @Test
+  void testCyclicDetection() {
+    final var di = new DI();
+    assertThrows(IllegalStateException.class, () -> di.oneOf(CyclicDep1.class));
   }
 }
 
@@ -91,11 +97,11 @@ class OtherService {
   }
 }
 
-interface CarInsuranceProvider {
+interface CarInsuranceProviderTest {
 }
 
 @Component
-class Provider1 implements CarInsuranceProvider {
+class Provider1 implements CarInsuranceProviderTest {
   private Dependency dependency;
 
   Provider1(Dependency dependency) {
@@ -104,7 +110,7 @@ class Provider1 implements CarInsuranceProvider {
 }
 
 @Component
-class Provider2 implements CarInsuranceProvider {
+class Provider2 implements CarInsuranceProviderTest {
   private Dependency dependency;
 
   Provider2(Dependency dependency) {
@@ -113,10 +119,28 @@ class Provider2 implements CarInsuranceProvider {
 }
 
 @Component
-class Provider3 implements CarInsuranceProvider {
+class Provider3 implements CarInsuranceProviderTest {
   private Dependency dependency;
 
   Provider3(Dependency dependency) {
     this.dependency = dependency;
+  }
+}
+
+@Component
+class CyclicDep1 {
+  private CyclicDep2 cyclicDep2;
+
+  CyclicDep1(CyclicDep2 cyclicDep2) {
+    this.cyclicDep2 = cyclicDep2;
+  }
+}
+
+@Component
+class CyclicDep2 {
+  private CyclicDep1 cyclicDep1;
+
+  CyclicDep2(CyclicDep1 cyclicDep1) {
+    this.cyclicDep1 = cyclicDep1;
   }
 }
