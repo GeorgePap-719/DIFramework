@@ -15,9 +15,10 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 public class DI {
-
   private final HashMap<String, Instance> singletons = new HashMap<>();
   private final HashMap<String, Class<?>> components = new HashMap<>();
+
+  private final HashMap<String, Node> nodes = new HashMap<>();
 
   private final List<String> packages = new ArrayList<>();
 
@@ -106,13 +107,13 @@ public class DI {
 
   // Constructs each time a new instance.
   public <T> T oneOf(Class<T> clazz) {
-    return new ClassLoader().loadClass(clazz);
+    return new ClassLoader().getOrLoad(clazz);
   }
 
   private class ClassLoader {
     private final HashSet<Class<?>> seen = new HashSet<>();
 
-    <T> T loadClass(Class<T> clazz) {
+    <T> T getOrLoad(Class<T> clazz) {
       final var canonicalName = clazz.getCanonicalName();
       if (components.get(canonicalName) == null) {
         throw new NoSuchElementException("Class: " + canonicalName + " does not have the '@Component' annotation");
@@ -121,11 +122,17 @@ public class DI {
         throw new IllegalStateException("There is a cyclic dependency at: " + canonicalName);
       }
       seen.add(clazz);
+      final var node = nodes.get(clazz.getCanonicalName());
+      if (node != null) {
+        return createNewInstance(node.constructor, node.parameters);
+      }
       final var constructor = Arrays.stream(clazz.getDeclaredConstructors())
           .findFirst()
           .orElseThrow(() -> new IllegalStateException("unexpected"));
       final var parameterTypes = constructor.getParameterTypes();
       if (parameterTypes.length == 0) {
+        // Cache result.
+        nodes.put(canonicalName, new Node(constructor));
         return createNewInstance(constructor, null);
       }
       // Create Parameters to inject them into constructor.
@@ -133,8 +140,10 @@ public class DI {
       for (int i = 0; i < parameterTypes.length; i++) {
         final var parameterType = parameterTypes[i];
         final var retrievedClass = safeGetClass(parameterType.getCanonicalName());
-        parameters[i] = loadClass(retrievedClass);
+        parameters[i] = getOrLoad(retrievedClass);
       }
+      // Cache result.
+      nodes.put(canonicalName, new Node(constructor, parameters));
       return createNewInstance(constructor, parameters);
     }
   }
@@ -155,7 +164,7 @@ public class DI {
    * @throws RuntimeException which wraps an 'InvocationTargetException', in case the target constructor throws an exception.
    */
   @SuppressWarnings("unchecked")
-  private <T> T createNewInstance(Constructor<?> constructor, Object[] parameters) {
+  private static <T> T createNewInstance(Constructor<?> constructor, Object[] parameters) {
     try {
       if (parameters == null) {
         return (T) constructor.newInstance();
@@ -176,5 +185,11 @@ public class DI {
    * Class to store a single instance for a given object.
    */
   private record Instance(Object value) {
+  }
+
+  private record Node(Constructor<?> constructor, Object[] parameters) {
+    public Node(Constructor<?> constructor) {
+      this(constructor, null);
+    }
   }
 }
