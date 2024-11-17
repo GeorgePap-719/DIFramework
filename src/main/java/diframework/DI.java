@@ -90,15 +90,15 @@ public class DI {
   }
 
   // Constructs a list of objects implementing the given interface.
-  public <T> List<T> listOf(Class<T> interfaceName) {
+  public <T> List<T> listOf(Class<T> targetInterface) {
     final var implementations = new ArrayList<T>();
     for (Map.Entry<String, Class<?>> entry : components.entrySet()) {
-      if (!interfaceName.isAssignableFrom(entry.getValue())) {
+      if (!targetInterface.isAssignableFrom(entry.getValue())) {
         continue;
       }
-      Object impl = oneOf(entry.getValue());
+      final var implementation = oneOf(entry.getValue());
       //noinspection unchecked
-      implementations.add((T) impl);
+      implementations.add((T) implementation);
     }
     return implementations;
   }
