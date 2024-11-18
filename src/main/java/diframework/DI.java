@@ -105,14 +105,7 @@ public class DI {
 
   // Constructs each time a new instance.
   public <T> T oneOf(Class<T> clazz) {
-    try {
-      return loadClass(clazz);
-    } catch (Throwable e) {
-      if (e instanceof NoSuchElementException castedE) {
-        throw castedE;
-      }
-      throw new RuntimeException(e);
-    }
+    return loadClass(clazz);
   }
 
   private <T> T loadClass(Class<T> clazz) {
