@@ -7,7 +7,7 @@
 At initialization, we scan the provided path for annotations. This is done mainly to be able to scan for available
 implementations for a given interface in `listOf` API.
 
-Even if we consider solutions without annotations, there is not a (know) way around, scanning everything each time.
+Even if we consider solutions without annotations, there is not a (know) way around scanning everything each time.
 
 ### Annotation or not
 
@@ -17,4 +17,4 @@ Even if we consider solutions without annotations, there is not a (know) way aro
 ### Performance
 
 We use a dfs on graph to load a class. An idea to improve this would be to use bfs, since most of the time, the
-dependencies are forming a straight line. This way we can greatly improve average and best time.
+dependencies are forming a straight line. This way we can greatly improve average and best space complexity.
